@@ -53,21 +53,21 @@ resource "aws_instance" "automate_server" {
 
   provisioner "remote-exec" {
     inline = [
-      "hostname automate..........",
-      "hostnamectl set-hostname automate.......",
-      "echo automate.... | tee /etc/hostname",
-      "apt-get install zip curl",
-      "curl https://packages.chef.io/files/current/automate/latest/chef-automate_linux_amd64.zip",
-      "unzip chef-automate_linux_amd64.zip -d /usr/sbin",
-      "echo vm.max_map_count=262144 | tee -a /etc/sysctl.conf",
-      "echo vm.dirty_expire_centisecs=20000 | tee -a /etc/sysctl.conf",
-      "sysctl -p /etc/sysctl.conf",
-      "chef-automate init-config",
-      "yes | chef-automate deploy --channel current --upgrade-strategy none --skip-preflight config.toml",
+      "sudo hostname ${format("%s%02d.%s", var.instance_hostname["automate_server"], count.index + 1, var.domain)}",
+      "sudo hostnamectl set-hostname ${format("%s%02d.%s", var.instance_hostname["automate_server"], count.index + 1, var.domain)}",
+      "echo ${format("%s%02d.%s", var.instance_hostname["automate_server"], count.index + 1, var.domain)} | sudo tee /etc/hostname",
+      "sudo apt-get install zip curl",
+      "wget https://packages.chef.io/files/current/automate/latest/chef-automate_linux_amd64.zip",
+      "sudo unzip chef-automate_linux_amd64.zip -d /usr/local/bin",
+      "echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf",
+      "echo vm.dirty_expire_centisecs=20000 | sudo tee -a /etc/sysctl.conf",
+      "sudo sysctl -p /etc/sysctl.conf",
+      "sudo chef-automate init-config",
+      "yes | sudo chef-automate deploy --channel current --upgrade-strategy none --skip-preflight config.toml",
 
       # "chef-automate license apply $(cat automate.license)",
       # "rm automate.license",
-      "chef-automate admin-token > data-collector-token",
+      "sudo chef-automate admin-token | tee data-collector.token",
     ]
   }
 }
@@ -118,7 +118,13 @@ resource "aws_instance" "chef_server" {
 
   provisioner "remote-exec" {
     inline = [
+      "sudo hostname ${format("%s%02d.%s", var.instance_hostname["chef_server"], count.index + 1, var.domain)}",
+      "sudo hostnamectl set-hostname ${format("%s%02d.%s", var.instance_hostname["chef_server"], count.index + 1, var.domain)}",
+      "echo ${format("%s%02d.%s", var.instance_hostname["chef_server"], count.index + 1, var.domain)} | sudo tee /etc/hostname",
       "curl -L https://omnitruck.chef.io/install.sh | sudo bash -s -- -P chef-server -d /tmp",
+      "sudo mkdir /etc/opscode",
+      "echo 'topology \"standalone\"' | sudo tee -a /etc/opscode/chef-server.rb",
+      "echo 'api_fqdn \"${format("%s%02d.%s", var.instance_hostname["chef_server"], count.index + 1, var.domain)}\"' | sudo tee -a /etc/opscode/chef-server.rb",
       "sudo chef-server-ctl reconfigure",
     ]
   }
