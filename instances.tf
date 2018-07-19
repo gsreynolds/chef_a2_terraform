@@ -53,10 +53,10 @@ resource "aws_instance" "automate_server" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo hostname ${format("%s%02d.%s", var.instance_hostname["automate_server"], count.index + 1, var.domain)}",
-      "sudo hostnamectl set-hostname ${format("%s%02d.%s", var.instance_hostname["automate_server"], count.index + 1, var.domain)}",
-      "echo ${format("%s%02d.%s", var.instance_hostname["automate_server"], count.index + 1, var.domain)} | sudo tee /etc/hostname",
-      "sudo apt-get install zip curl",
+      "sudo apt update && sudo apt install -y ntp",
+      "sudo hostname ${self.tags.Name}",
+      "sudo hostnamectl set-hostname ${self.tags.Name}",
+      "echo ${self.tags.Name} | sudo tee /etc/hostname",
       "wget https://packages.chef.io/files/current/automate/latest/chef-automate_linux_amd64.zip",
       "sudo unzip chef-automate_linux_amd64.zip -d /usr/local/bin",
       "echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf",
@@ -118,13 +118,14 @@ resource "aws_instance" "chef_server" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo hostname ${format("%s%02d.%s", var.instance_hostname["chef_server"], count.index + 1, var.domain)}",
-      "sudo hostnamectl set-hostname ${format("%s%02d.%s", var.instance_hostname["chef_server"], count.index + 1, var.domain)}",
-      "echo ${format("%s%02d.%s", var.instance_hostname["chef_server"], count.index + 1, var.domain)} | sudo tee /etc/hostname",
+      "sudo apt update && sudo apt install -y ntp",
+      "sudo hostname ${self.tags.Name}",
+      "sudo hostnamectl set-hostname ${self.tags.Name}",
+      "echo ${self.tags.Name} | sudo tee /etc/hostname",
       "curl -L https://omnitruck.chef.io/install.sh | sudo bash -s -- -P chef-server -d /tmp",
       "sudo mkdir /etc/opscode",
       "echo 'topology \"standalone\"' | sudo tee -a /etc/opscode/chef-server.rb",
-      "echo 'api_fqdn \"${format("%s%02d.%s", var.instance_hostname["chef_server"], count.index + 1, var.domain)}\"' | sudo tee -a /etc/opscode/chef-server.rb",
+      "echo 'api_fqdn \"${self.tags.Name}\"' | sudo tee -a /etc/opscode/chef-server.rb",
       "sudo chef-server-ctl reconfigure",
     ]
   }
