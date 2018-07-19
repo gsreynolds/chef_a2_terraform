@@ -130,18 +130,6 @@ resource "aws_instance" "chef_server" {
   }
 }
 
-# "sudo chef-server-ctl set-secret data_collector token '<API_TOKEN_FROM_STEP_1>'",
-# "sudo chef-server-ctl restart nginx",
-# "sudo chef-server-ctl restart opscode-erchef",
-# data_collector['root_url'] = 'https://automate.example.com/data-collector/v0/'
-# # Add for chef client run forwarding
-# data_collector['proxy'] = true
-# # Add for compliance scanning
-# profiles['root_url'] = 'https://automate.example.com'
-# # Save and close the file
-
-# sudo chef-server-ctl reconfigure
-
 resource "aws_eip" "chef_server" {
   vpc        = true
   count      = 1

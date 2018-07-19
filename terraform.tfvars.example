@@ -10,7 +10,7 @@ default_tags = {
   X-Production  = false
   X-TTL         = 168
   X-Environment = ""
-  X-Application = "Chef HA"
+  X-Application = "Chef Automate"
 }
 
 vpc = {
