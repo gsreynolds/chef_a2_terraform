@@ -73,6 +73,12 @@ variable "instance" {
     chef_server_size       = 40
     chef_server_term       = true
     chef_server_type       = "gp2"
+    chef_client_flavor     = "t2.medium"
+    chef_client_iops       = 0
+    chef_client_public     = true
+    chef_client_size       = 10
+    chef_client_term       = true
+    chef_client_type       = "gp2"
   }
 }
 
@@ -83,6 +89,7 @@ variable "instance_hostname" {
   default = {
     chef_server     = "chef"
     automate_server = "automate"
+    chef_client     = "node"
   }
 }
 
@@ -101,4 +108,11 @@ variable "r53_ttl" {
   description = "DNS record TTLS"
 
   default = "180"
+}
+
+variable "validator_key_path" {
+  type        = "string"
+  description = "Path to org validator key in SSM"
+
+  default = "/chef/test/"
 }
