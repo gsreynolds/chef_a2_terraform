@@ -1,6 +1,7 @@
 resource "aws_instance" "chef_clients" {
-  count = 3
-  ami   = "${data.aws_ami.ubuntu.id}"
+  count      = 3
+  depends_on = ["aws_instance.chef_server"]
+  ami        = "${data.aws_ami.ubuntu.id}"
 
   # ebs_optimized               = "${var.instance["ebs_optimized"]}"
   instance_type               = "${var.instance["chef_client_flavor"]}"

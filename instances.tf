@@ -53,7 +53,7 @@ resource "aws_instance" "automate_server" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo apt update && sudo apt install -y ntp",
+      "sudo apt update && sudo apt install -y ntp zip",
       "sudo hostname ${self.tags.Name}",
       "sudo hostnamectl set-hostname ${self.tags.Name}",
       "echo ${self.tags.Name} | sudo tee /etc/hostname",
@@ -63,7 +63,7 @@ resource "aws_instance" "automate_server" {
       "echo vm.dirty_expire_centisecs=20000 | sudo tee -a /etc/sysctl.conf",
       "sudo sysctl -p /etc/sysctl.conf",
       "sudo chef-automate init-config",
-      "yes | sudo chef-automate deploy --channel current --upgrade-strategy none --skip-preflight config.toml",
+      "sudo chef-automate deploy --channel current --upgrade-strategy none --accept-terms-and-mlsa config.toml",
 
       # "chef-automate license apply $(cat automate.license)",
       # "rm automate.license",
