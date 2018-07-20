@@ -1,5 +1,5 @@
 resource "aws_instance" "chef_clients" {
-  count = 1
+  count = 3
   ami   = "${data.aws_ami.ubuntu.id}"
 
   # ebs_optimized               = "${var.instance["ebs_optimized"]}"
@@ -36,36 +36,38 @@ resource "aws_instance" "chef_clients" {
     inline = [
       "sudo apt update && sudo apt install -y ntp python3",
       "export LC_ALL='en_US.UTF-8' && export LC_CTYPE='en_US.UTF-8' && sudo dpkg-reconfigure  --frontend=noninteractive locales",
-      "wget https://bootstrap.pypa.io/get-pip.py && sudo python get-pip.py",
-      "sudo pip install awscli --upgrade",
+      "wget https://bootstrap.pypa.io/get-pip.py && sudo python3 get-pip.py -q",
+      "sudo pip -q install awscli --upgrade",
       "sudo hostname ${self.tags.Name}",
       "sudo hostnamectl set-hostname ${self.tags.Name}",
       "echo ${self.tags.Name} | sudo tee /etc/hostname",
       "sudo mkdir -p /etc/chef && sudo mkdir -p /var/lib/chef && sudo mkdir -p /var/log/chef",
       "curl -L https://omnitruck.chef.io/install.sh | sudo bash -s -- -P chef -d /tmp",
-      "aws ssm get-parameter --name ${var.validator_key_path}/chef_validator --with-decryption --output text --query Parameter.Value --region ${var.provider["region"]}` | sudo cat > /etc/chef/validator.pem ",
+      "aws ssm get-parameter --name ${var.validator_key_path}chef_validator --with-decryption --output text --query Parameter.Value --region ${var.provider["region"]} | sudo tee /etc/chef/validator.pem > /dev/null",
     ]
   }
 
   provisioner "file" {
     source      = "first-boot.json"
-    destination = "/root/first-boot.json"
+    destination = "first-boot.json"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "echo 'log_location     STDOUT' | sudo tee -a /etc/chef/client.rb",
-      "echo -e 'chef_server_url  \"https://aut-chef-server/organizations/my-org\"' | sudo tee -a /etc/chef/client.rb",
-      "echo -e 'validation_client_name \"test-validator\"' | sudo tee -a /etc/chef/client.rb",
-      "echo -e 'validation_key \"/etc/chef/validator.pem\"' | sudo tee -a /etc/chef/client.rb",
-      "echo -e 'node_name  \"${self.tags.Name}\"' >> /etc/chef/client.rb",
+      "echo 'log_location STDOUT' | sudo tee /etc/chef/client.rb",
+      "echo 'chef_server_url \"https://${aws_instance.chef_server.tags.Name}/organizations/test\"' | sudo tee -a /etc/chef/client.rb",
+      "echo 'validation_client_name \"test-validator\"' | sudo tee -a /etc/chef/client.rb",
+      "echo 'validation_key \"/etc/chef/validator.pem\"' | sudo tee -a /etc/chef/client.rb",
+      "echo 'node_name  \"${self.tags.Name}\"' | sudo tee -a /etc/chef/client.rb",
+      "echo 'ssl_verify_mode :verify_none' | sudo tee -a /etc/chef/client.rb",
+      "sudo mv first-boot.json /etc/chef/first-boot.json",
       "sudo chef-client -j /etc/chef/first-boot.json",
     ]
   }
 }
 
 resource "aws_route53_record" "chef_clients" {
-  count   = 1
+  count   = 3
   zone_id = "${data.aws_route53_zone.zone.id}"
   name    = "${element(aws_instance.chef_clients.*.tags.Name, count.index)}"
   type    = "A"
